@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Boursier CAC40 — Seconde MRC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f4f0;--surface:#fff;--surface2:#f0efe9;--border:#e0dfd8;--border2:#c8c7be;
+  --text:#1a1a18;--text2:#5a5a55;--text3:#9a9990;
+  --green:#1a7a52;--gbg:#e6f4ed;--gbd:#a3d4bc;
+  --red:#c0392b;--rbg:#fdecea;--rbd:#f0b3ad;
+  --blue:#1d4b8f;--bbg:#e8eef8;--bbd:#b3c6e8;
+  --amber:#8b5a00;--ambg:#fef3d7;--ambd:#e8c97a;
+  --purple:#5b21b6;--pbg:#f3f0ff;--pbd:#c4b5fd;
+  --mono:'DM Mono',monospace;--sans:'Figtree',sans-serif;--r:10px;--rl:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0}html{font-size:15px}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh}
+
+/* ── ÉCRAN D'ACCUEIL ── */
+#home-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;gap:1.2rem}
+.home-logo{width:64px;height:64px;background:var(--text);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:.5rem}
+.home-title{font-size:22px;font-weight:600;letter-spacing:-.02em;text-align:center}
+.home-sub{font-size:13px;color:var(--text2);font-family:var(--mono);text-align:center;margin-bottom:.5rem}
+.home-cards{display:grid;grid-template-columns:1fr 1fr;gap:1rem;max-width:520px;width:100%}
+.home-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:1.8rem;text-align:center;cursor:pointer;transition:all .15s}
+.home-card:hover{border-color:var(--border2);box-shadow:0 2px 12px rgba(0,0,0,.06);transform:translateY(-1px)}
+.home-card-icon{font-size:32px;margin-bottom:.8rem}
+.home-card h2{font-size:15px;font-weight:600;margin-bottom:5px;letter-spacing:-.01em}
+.home-card p{font-size:12px;color:var(--text2);line-height:1.5}
+.hc-teacher{border-color:var(--ambd);background:var(--ambg)}
+.hc-teacher:hover{border-color:var(--amber)}
+
+/* ── INPUTS COMMUNS ── */
+input[type=text],input[type=number],input[type=password]{padding:9px 12px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--text);font-family:var(--sans);font-size:14px;outline:none;transition:border-color .15s}
+input:focus{border-color:var(--text)}
+.btn-primary{width:100%;padding:12px;background:var(--text);color:#fff;border:none;border-radius:var(--r);font-size:14px;font-weight:600;font-family:var(--sans);cursor:pointer;transition:opacity .15s}
+.btn-primary:hover{opacity:.85}
+.btn-amber{background:var(--amber)}
+
+/* ── INIT ÉLÈVE ── */
+#init-screen{min-height:100vh;display:none;flex-direction:column;align-items:center;justify-content:center;padding:2rem}
+.init-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:2.5rem;max-width:460px;width:100%;text-align:center}
+.init-logo{width:56px;height:56px;background:var(--text);border-radius:13px;display:flex;align-items:center;justify-content:center;margin:0 auto 1.2rem;font-size:24px}
+.init-card h1{font-size:19px;font-weight:600;margin-bottom:4px;letter-spacing:-.02em}
+.init-sub{font-size:12px;color:var(--text2);font-family:var(--mono);margin-bottom:1.4rem}
+.ilbl{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:6px;text-align:left}
+.nr{display:flex;gap:8px;margin-bottom:10px}
+.nr input{flex:1}
+.bw{position:relative;margin-bottom:.9rem}
+.bw input{width:100%;text-align:center;font-size:24px;font-family:var(--mono);font-weight:500;padding:12px;border:1.5px solid var(--border);border-radius:var(--r);background:var(--surface2);color:var(--text);outline:none}
+.bw input:focus{border-color:var(--text)}
+.presets{display:flex;gap:5px;justify-content:center;margin-bottom:1.3rem;flex-wrap:wrap}
+.preset{padding:4px 11px;border:1px solid var(--border);border-radius:20px;background:var(--surface);font-size:11px;font-family:var(--mono);cursor:pointer;color:var(--text2);transition:all .12s}
+.preset:hover{border-color:var(--text);color:var(--text)}
+.back-link{font-size:12px;color:var(--text3);font-family:var(--mono);cursor:pointer;margin-top:1rem;display:inline-block}
+.back-link:hover{color:var(--text)}
+
+/* ── APP ÉLÈVE ── */
+#main-app{display:none;min-height:100vh}
+.top-nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 1.2rem;display:flex;align-items:center;gap:.8rem;position:sticky;top:0;z-index:100;height:52px}
+.nb{display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px;letter-spacing:-.01em;flex-shrink:0}
+.nbi{width:26px;height:26px;background:var(--text);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff}
+.ntabs{display:flex;flex:1;overflow-x:auto}
+.ntab{padding:0 13px;height:52px;border:none;background:none;font-family:var(--sans);font-size:12px;font-weight:500;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .12s;white-space:nowrap;flex-shrink:0}
+.ntab:hover{color:var(--text)}.ntab.active{color:var(--text);border-bottom-color:var(--text)}
+.nright{margin-left:auto;display:flex;align-items:center;gap:7px;flex-shrink:0}
+.avatar{width:27px;height:27px;background:var(--surface2);border:1px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;font-family:var(--mono)}
+.nnm{font-size:11px;font-family:var(--mono);color:var(--text2)}
+.btn-rst{padding:4px 8px;border:1px solid var(--border);border-radius:5px;background:none;font-size:10px;color:var(--text3);cursor:pointer;font-family:var(--mono)}
+.btn-rst:hover{color:var(--red);border-color:var(--rbd)}
+.content{max-width:1160px;margin:0 auto;padding:1.2rem}
+.mbar{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:1.2rem}
+.mc{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px}
+.ml{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:4px;font-family:var(--mono)}
+.mv{font-size:18px;font-weight:600;font-family:var(--mono);letter-spacing:-.02em}
+.mv.pos{color:var(--green)}.mv.neg{color:var(--red)}
+.ms{font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:2px}
+.panel{display:none}.panel.active{display:block}
+
+/* marché */
+.mktl{display:grid;grid-template-columns:1fr 330px;gap:1.2rem;align-items:start}
+.mktr{position:sticky;top:66px}
+.toolbar{display:flex;gap:7px;align-items:center;margin-bottom:.7rem}
+.sw{flex:1;position:relative}
+.sw input{width:100%;padding:8px 12px 8px 32px;border-radius:20px;font-size:12px}
+.si{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:12px;pointer-events:none}
+.chips{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:.7rem}
+.chip{padding:3px 10px;border:1px solid var(--border);border-radius:20px;font-size:11px;cursor:pointer;background:var(--surface);color:var(--text2);font-family:var(--mono);transition:all .1s}
+.chip:hover{border-color:var(--border2);color:var(--text)}.chip.active{background:var(--text);color:#fff;border-color:var(--text)}
+.slist{display:flex;flex-direction:column;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;max-height:600px;overflow-y:auto}
+.srow{display:flex;align-items:center;padding:9px 12px;background:var(--surface);cursor:pointer;gap:9px;transition:background .1s}
+.srow:hover{background:var(--surface2)}.srow.sel{background:#f0f4fc;border-left:3px solid var(--blue)}
+.sico{width:32px;height:32px;background:var(--surface2);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.sinf{flex:1;min-width:0}
+.snm{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.01em}
+.smt{font-size:10px;color:var(--text3);font-family:var(--mono)}
+.shd{font-size:10px;color:var(--blue);font-family:var(--mono);font-weight:500}
+.spc{text-align:right;flex-shrink:0}
+.spv{font-size:13px;font-weight:600;font-family:var(--mono);letter-spacing:-.01em}
+.scv{font-size:10px;font-family:var(--mono)}
+.pos{color:var(--green)}.neg{color:var(--red)}
+.dc{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden}
+.de{padding:2rem 1.2rem;text-align:center;color:var(--text3);font-size:12px}
+.de .eico{font-size:28px;margin-bottom:7px}
+.dh{padding:14px;border-bottom:1px solid var(--border)}
+.dtop{display:flex;align-items:flex-start;gap:9px;margin-bottom:11px}
+.dico{width:40px;height:40px;background:var(--surface2);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
+.dtt{font-size:14px;font-weight:600;letter-spacing:-.02em;margin-bottom:2px}
+.dtk{font-size:10px;font-family:var(--mono);color:var(--text3)}
+.dpb{margin-left:auto;text-align:right}
+.dpr{font-size:18px;font-weight:600;font-family:var(--mono);letter-spacing:-.03em}
+.dch{font-size:10px;font-family:var(--mono)}
+.dbg{display:flex;gap:4px;flex-wrap:wrap}
+.badge{padding:2px 7px;border-radius:4px;font-size:10px;font-family:var(--mono);font-weight:500;display:inline-block}
+.bs{background:var(--surface2);color:var(--text2)}.bc{background:var(--ambg);color:var(--amber)}.bh{background:var(--bbg);color:var(--blue)}
+.dds{padding:12px 14px;font-size:12px;color:var(--text2);line-height:1.65;border-bottom:1px solid var(--border)}
+.dss{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border-bottom:1px solid var(--border)}
+.dst{background:var(--surface);padding:8px 13px}
+.dsl{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);font-family:var(--mono);margin-bottom:2px}
+.dsv{font-size:12px;font-weight:600;font-family:var(--mono)}
+.dhi{padding:9px 14px;background:var(--bbg);border-bottom:1px solid var(--border);font-size:10px;font-family:var(--mono);color:var(--blue)}
+.trd{padding:13px 14px}
+.trl{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);font-family:var(--mono);margin-bottom:7px}
+.trr{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.trr input{width:60px;text-align:center;font-family:var(--mono);font-size:12px;padding:6px 9px}
+.trb{display:flex;gap:6px}
+.btn-buy{flex:1;padding:8px;background:var(--gbg);border:1px solid var(--gbd);color:var(--green);border-radius:var(--r);font-weight:600;font-size:12px;font-family:var(--sans);cursor:pointer;transition:all .12s}
+.btn-buy:hover{background:var(--green);color:#fff;border-color:var(--green)}
+.btn-sell{flex:1;padding:8px;background:var(--rbg);border:1px solid var(--rbd);color:var(--red);border-radius:var(--r);font-weight:600;font-size:12px;font-family:var(--sans);cursor:pointer;transition:all .12s}
+.btn-sell:hover{background:var(--red);color:#fff;border-color:var(--red)}
+.btn-sell:disabled{opacity:.35;cursor:not-allowed}
+.bref{padding:7px 12px;border:1px solid var(--border);border-radius:20px;background:var(--surface);font-size:11px;font-family:var(--mono);cursor:pointer;color:var(--text2);transition:all .12s;white-space:nowrap}
+.bref:hover{border-color:var(--border2);color:var(--text)}
+
+/* tables */
+.shdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem}
+.stit{font-size:14px;font-weight:600;letter-spacing:-.01em}
+.twrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden}
+.dt{width:100%;border-collapse:collapse;font-size:12px}
+.dt th{text-align:left;padding:7px 10px;font-size:10px;font-family:var(--mono);font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);border-bottom:1px solid var(--border);background:var(--surface2)}
+.dt td{padding:10px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+.dt tbody tr:last-child td{border-bottom:none}
+.dt tbody tr:hover td{background:var(--surface2)}
+.epty{padding:2.5rem 2rem;text-align:center;color:var(--text3);font-size:12px}
+.eico2{font-size:28px;margin-bottom:7px}
+.cm{font-family:var(--mono);font-size:12px}.cn{font-weight:600;font-size:12px}.csb{font-size:10px;color:var(--text3);font-family:var(--mono)}
+.pc{font-family:var(--mono);font-weight:600;font-size:12px}
+.bsm{padding:3px 8px;border-radius:4px;border:1px solid var(--border);background:var(--surface);font-size:10px;font-family:var(--mono);cursor:pointer;color:var(--text2);transition:all .12s}
+.bsm:hover{border-color:var(--rbd);color:var(--red)}
+.bsm2{padding:5px 10px;border-radius:5px;border:1px solid var(--border);background:var(--surface);font-size:11px;font-family:var(--mono);cursor:pointer;color:var(--text2);transition:all .12s}
+.bsm2:hover{border-color:var(--border2);color:var(--text)}
+.bop{display:inline-block;padding:2px 6px;border-radius:3px;font-size:10px;font-family:var(--mono);font-weight:600}
+.bop-b{background:var(--gbg);color:var(--green)}.bop-s{background:var(--rbg);color:var(--red)}
+
+/* classement élève */
+.lbgrid{display:grid;grid-template-columns:1fr 2fr;gap:1.2rem;align-items:start}
+.lbc{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden}
+.lbh{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.lbh h3{font-size:13px;font-weight:600;letter-spacing:-.01em}
+.lbl{max-height:520px;overflow-y:auto}
+.lbrow{display:flex;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);gap:10px}
+.lbrow:last-child{border-bottom:none}.lbrow.me{background:var(--bbg)}
+.lbrnk{font-size:12px;font-weight:600;font-family:var(--mono);width:22px;flex-shrink:0;text-align:center}
+.gold{color:#b8860b}.silver{color:#777}.bronze{color:#b87333}
+.lbav{width:30px;height:30px;background:var(--surface2);border:1px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;font-family:var(--mono);flex-shrink:0}
+.lbnm{flex:1;font-size:13px;font-weight:500;letter-spacing:-.01em}
+.lbvl{text-align:right;flex-shrink:0}
+.lbtot{font-size:12px;font-weight:600;font-family:var(--mono);letter-spacing:-.01em}
+.lbpnl{font-size:10px;font-family:var(--mono)}
+.lbmt{padding:2rem;text-align:center;color:var(--text3);font-size:12px}
+.lbif{padding:10px 14px;background:var(--surface2);font-size:10px;color:var(--text3);font-family:var(--mono)}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border)}
+.sb{background:var(--surface);padding:12px 14px}
+.sbl{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);font-family:var(--mono);margin-bottom:3px}
+.sbv{font-size:15px;font-weight:600;font-family:var(--mono)}
+.trow{display:flex;gap:9px;flex-direction:column;margin-bottom:.9rem}
+.tc{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:11px 13px;display:flex;align-items:center;gap:11px}
+.tci{font-size:22px;flex-shrink:0}
+.tcp{font-size:10px;font-family:var(--mono);color:var(--text3);margin-bottom:2px}
+.tcn{font-size:13px;font-weight:600;letter-spacing:-.01em}
+.tcv{font-size:11px;font-family:var(--mono);color:var(--text2)}
+.mg{border-color:#f0d060;background:#fffbf0}.ms2{border-color:#d0d0d0;background:#f8f8f8}.mb{border-color:#d0a060;background:#fff8f0}
+
+/* ── APP ENSEIGNANT ── */
+#teacher-app{display:none;min-height:100vh}
+.teacher-nav{background:var(--amber);color:#fff;padding:0 1.4rem;display:flex;align-items:center;gap:1rem;position:sticky;top:0;z-index:100;height:52px}
+.tnb{display:flex;align-items:center;gap:9px;font-weight:600;font-size:14px;flex-shrink:0}
+.tnbi{width:28px;height:28px;background:rgba(0,0,0,.25);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px}
+.ttabs{display:flex;flex:1;overflow-x:auto}
+.ttab{padding:0 14px;height:52px;border:none;background:none;font-family:var(--sans);font-size:12px;font-weight:500;color:rgba(255,255,255,.7);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .12s;white-space:nowrap;flex-shrink:0}
+.ttab:hover{color:#fff}.ttab.active{color:#fff;border-bottom-color:#fff}
+.t-logout{margin-left:auto;padding:5px 11px;border:1px solid rgba(255,255,255,.4);border-radius:6px;background:none;font-size:11px;color:#fff;cursor:pointer;font-family:var(--mono);flex-shrink:0}
+.t-logout:hover{background:rgba(0,0,0,.15)}
+.tcontent{max-width:1200px;margin:0 auto;padding:1.4rem}
+.tpanel{display:none}.tpanel.active{display:block}
+
+/* enseignant — stats bar */
+.t-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-bottom:1.4rem}
+.tmc{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:11px 14px}
+.tml{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:4px;font-family:var(--mono)}
+.tmv{font-size:17px;font-weight:600;font-family:var(--mono);letter-spacing:-.02em}
+.tmv.pos{color:var(--green)}.tmv.neg{color:var(--red)}
+
+/* enseignant — tableau élèves */
+.t-toolbar{display:flex;gap:8px;align-items:center;margin-bottom:.8rem;flex-wrap:wrap}
+.t-search{flex:1;min-width:180px;position:relative}
+.t-search input{width:100%;padding:8px 12px 8px 32px;border-radius:20px;font-size:12px}
+.btn-warn{padding:7px 13px;border:1px solid var(--rbd);border-radius:var(--r);background:var(--rbg);color:var(--red);font-size:11px;font-family:var(--mono);cursor:pointer;font-weight:500;transition:all .12s}
+.btn-warn:hover{background:var(--red);color:#fff}
+.btn-info{padding:7px 13px;border:1px solid var(--bbd);border-radius:var(--r);background:var(--bbg);color:var(--blue);font-size:11px;font-family:var(--mono);cursor:pointer;font-weight:500;transition:all .12s}
+.btn-info:hover{background:var(--blue);color:#fff}
+.btn-ok{padding:7px 13px;border:1px solid var(--gbd);border-radius:var(--r);background:var(--gbg);color:var(--green);font-size:11px;font-family:var(--mono);cursor:pointer;font-weight:500;transition:all .12s}
+.btn-ok:hover{background:var(--green);color:#fff}
+.rank-medal{font-size:14px}
+.act-btns{display:flex;gap:5px}
+.bact{padding:3px 8px;border-radius:4px;border:1px solid var(--border);background:var(--surface);font-size:10px;font-family:var(--mono);cursor:pointer;transition:all .12s}
+.bact-r{border-color:var(--ambd);color:var(--amber)}.bact-r:hover{background:var(--amber);color:#fff}
+.bact-d{border-color:var(--rbd);color:var(--red)}.bact-d:hover{background:var(--red);color:#fff}
+.bact-v{border-color:var(--bbd);color:var(--blue)}.bact-v:hover{background:var(--blue);color:#fff}
+
+/* détail élève modal */
+.student-detail{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;margin-top:1rem}
+.sd-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;background:var(--surface2)}
+.sd-av{width:40px;height:40px;background:var(--amber);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;font-family:var(--mono);color:#fff;flex-shrink:0}
+.sd-name{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.sd-meta{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.sd-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border-bottom:1px solid var(--border)}
+.sd-met{background:var(--surface);padding:10px 14px}
+.sd-ml{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);font-family:var(--mono);margin-bottom:3px}
+.sd-mv{font-size:14px;font-weight:600;font-family:var(--mono)}
+
+/* import enseignant */
+.t-import-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.4rem}
+.t-imp-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:1.4rem}
+.t-imp-card h3{font-size:14px;font-weight:600;margin-bottom:5px;letter-spacing:-.01em}
+.t-imp-card p{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:.8rem}
+.dz{border:2px dashed var(--border2);border-radius:var(--r);padding:1.4rem;text-align:center;cursor:pointer;transition:all .15s;background:var(--surface2)}
+.dz:hover{border-color:var(--text);background:var(--bg)}.dz.dov{border-color:var(--amber);background:var(--ambg)}
+.dzico{font-size:26px;margin-bottom:6px}.dz p{font-size:12px;color:var(--text2);margin-bottom:0}
+.dzh{font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:4px}
+.cb{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:11px;font-family:var(--mono);font-size:11px;color:var(--text2);white-space:pre;line-height:1.7;margin-top:9px;overflow-x:auto}
+.ir{margin-top:9px;padding:8px 12px;border-radius:var(--r);font-size:11px;font-family:var(--mono);display:none}
+.ir.ok{background:var(--gbg);color:var(--green);border:1px solid var(--gbd)}
+.ir.err{background:var(--rbg);color:var(--red);border:1px solid var(--rbd)}
+.gbtn{width:100%;margin-top:8px;padding:9px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);font-size:11px;font-family:var(--mono);cursor:pointer;color:var(--text);transition:all .12s;font-weight:500}
+.gbtn:hover{background:var(--text);color:#fff;border-color:var(--text)}
+.gbtn-amber{border-color:var(--ambd);color:var(--amber);background:var(--ambg)}
+.gbtn-amber:hover{background:var(--amber);color:#fff}
+
+/* ── IMPRESSION ── */
+@media print{
+  body *{visibility:hidden}
+  #print-zone,#print-zone *{visibility:visible}
+  #print-zone{position:fixed;top:0;left:0;width:100%;padding:20px;background:#fff}
+  .no-print{display:none!important}
+  .print-page{page-break-after:always}
+}
+#print-zone{display:none}
+.print-header{text-align:center;margin-bottom:20px;border-bottom:2px solid #333;padding-bottom:12px}
+.print-header h1{font-size:18px;font-weight:600}
+.print-header p{font-size:12px;color:#555;margin-top:4px}
+.print-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:12px}
+.print-table th{background:#333;color:#fff;padding:8px 10px;text-align:left;font-size:11px;font-weight:500}
+.print-table td{padding:8px 10px;border-bottom:1px solid #ddd}
+.print-table tr:nth-child(even) td{background:#f9f9f9}
+.print-table .medal{font-size:14px}
+.print-pos{color:#1a7a52;font-weight:600}.print-neg{color:#c0392b;font-weight:600}
+.print-footer{margin-top:20px;font-size:10px;color:#888;text-align:center;border-top:1px solid #ddd;padding-top:10px}
+
+/* ── MODALES ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:none;align-items:center;justify-content:center}
+.modal-box{background:var(--surface);border-radius:var(--rl);padding:1.8rem;max-width:360px;width:92%;text-align:center;border:1px solid var(--border)}
+.modal-box h3{font-size:15px;font-weight:600;margin-bottom:7px}
+.modal-box p{font-size:12px;color:var(--text2);margin-bottom:1.1rem;line-height:1.5}
+.pin-inp{width:100%;text-align:center;font-size:20px;font-family:var(--mono);letter-spacing:.2em;margin-bottom:.8rem}
+.mbtns{display:flex;gap:7px}
+.bcnl{flex:1;padding:9px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface2);font-size:12px;cursor:pointer;font-family:var(--sans)}
+.bdng{flex:1;padding:9px;border:1px solid var(--rbd);border-radius:var(--r);background:var(--rbg);color:var(--red);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:all .12s}
+.bdng:hover{background:var(--red);color:#fff}
+.bamb{flex:1;padding:9px;border:1px solid var(--ambd);border-radius:var(--r);background:var(--ambg);color:var(--amber);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:all .12s}
+.bamb:hover{background:var(--amber);color:#fff}
+
+/* toast */
+.tc-ctr{position:fixed;top:12px;right:12px;display:flex;flex-direction:column;gap:5px;z-index:9999}
+.toast{padding:8px 13px;border-radius:7px;font-size:11px;font-weight:500;font-family:var(--mono);animation:sIn .2s ease;max-width:300px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+.toast.ok{background:var(--gbg);color:var(--green);border:1px solid var(--gbd)}
+.toast.err{background:var(--rbg);color:var(--red);border:1px solid var(--rbd)}
+.toast.info{background:var(--bbg);color:var(--blue);border:1px solid var(--bbd)}
+.toast.warn{background:var(--ambg);color:var(--amber);border:1px solid var(--ambd)}
+@keyframes sIn{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:translateY(0)}}
+
+@media(max-width:780px){
+  .mbar{grid-template-columns:1fr 1fr}.mktl,.lbgrid,.t-import-grid{grid-template-columns:1fr}
+  .mktr{position:static}.nnm{display:none}.t-stats{grid-template-columns:repeat(2,1fr)}
+  .home-cards{grid-template-columns:1fr}.sd-metrics{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================ -->
+<!-- ÉCRAN D'ACCUEIL                                              -->
+<!-- ============================================================ -->
+<div id="home-screen">
+  <div class="home-logo">📈</div>
+  <div class="home-title">Simulateur Boursier CAC40</div>
+  <div class="home-sub">Seconde MRC — Choisissez votre profil</div>
+  <div class="home-cards">
+    <div class="home-card" onclick="showStudentInit()">
+      <div class="home-card-icon">🎓</div>
+      <h2>Élève</h2>
+      <p>Accéder à mon portefeuille et investir dans les actions du CAC40</p>
+    </div>
+    <div class="home-card hc-teacher" onclick="showTeacherLogin()">
+      <div class="home-card-icon">👨‍🏫</div>
+      <h2>Enseignant</h2>
+      <p>Tableau de bord de la classe, import des cotations, classement</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- ÉCRAN INIT ÉLÈVE                                             -->
+<!-- ============================================================ -->
+<div id="init-screen">
+  <div class="init-card">
+    <div class="init-logo">📈</div>
+    <h1>Mon Portefeuille</h1>
+    <div class="init-sub">Seconde MRC — CAC40 Fictif</div>
+    <div class="ilbl">Votre identité</div>
+    <div class="nr">
+      <input type="text" id="ip" placeholder="Prénom" maxlength="30">
+      <input type="text" id="in" placeholder="NOM" maxlength="30">
+    </div>
+    <div class="ilbl">Budget de départ (€)</div>
+    <div class="bw"><input type="number" id="ib" value="10000" min="100" step="500"></div>
+    <div class="presets">
+      <button class="preset" onclick="sb(5000)">5 000 €</button>
+      <button class="preset" onclick="sb(10000)">10 000 €</button>
+      <button class="preset" onclick="sb(20000)">20 000 €</button>
+      <button class="preset" onclick="sb(50000)">50 000 €</button>
+    </div>
+    <button class="btn-primary" onclick="initPortfolio()">Commencer à investir →</button>
+    <div class="back-link" onclick="showHome()">← Retour à l'accueil</div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- APP ÉLÈVE                                                    -->
+<!-- ============================================================ -->
+<div id="main-app">
+  <nav class="top-nav">
+    <div class="nb"><div class="nbi">📈</div>CAC40 Sim</div>
+    <div class="ntabs">
+      <button class="ntab active" onclick="switchTab('marche')">Marché</button>
+      <button class="ntab" onclick="switchTab('portefeuille')">Portefeuille</button>
+      <button class="ntab" onclick="switchTab('historique')">Historique</button>
+      <button class="ntab" onclick="switchTab('classement')">🏆 Classement</button>
+    </div>
+    <div class="nright">
+      <div class="avatar" id="nav-av">—</div>
+      <span class="nnm" id="nav-nm">—</span>
+      <button class="btn-rst" onclick="openPinModal()">Réinitialiser</button>
+    </div>
+  </nav>
+  <div class="content">
+    <div class="mbar">
+      <div class="mc"><div class="ml">Budget disponible</div><div class="mv" id="mb">—</div></div>
+      <div class="mc"><div class="ml">Valeur portefeuille</div><div class="mv" id="mp">—</div></div>
+      <div class="mc"><div class="ml">Valeur totale</div><div class="mv" id="mt">—</div></div>
+      <div class="mc"><div class="ml">Plus/moins-value</div><div class="mv" id="mpnl">—</div><div class="ms" id="msub"></div></div>
+    </div>
+
+    <!-- MARCHÉ -->
+    <div id="panel-marche" class="panel active">
+      <div class="mktl">
+        <div>
+          <div class="toolbar">
+            <div class="sw"><span class="si">🔍</span><input type="text" id="srch" placeholder="Rechercher..." oninput="filterStocks()"></div>
+            <span id="lupd" style="font-size:10px;color:var(--text3);font-family:var(--mono);white-space:nowrap;display:flex;align-items:center;gap:5px">
+              <span id="price-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--text3);flex-shrink:0"></span>
+              <span id="price-status">Chargement…</span>
+            </span>
+          </div>
+          <div class="chips" id="chips">
+            <span class="chip active" onclick="setFilter('')" data-f="">Tous</span>
+            <span class="chip" onclick="setFilter('Luxe')" data-f="Luxe">Luxe</span>
+            <span class="chip" onclick="setFilter('Énergie')" data-f="Énergie">Énergie</span>
+            <span class="chip" onclick="setFilter('Santé')" data-f="Santé">Santé</span>
+            <span class="chip" onclick="setFilter('Banque')" data-f="Banque">Banque</span>
+            <span class="chip" onclick="setFilter('Tech')" data-f="Tech">Tech</span>
+            <span class="chip" onclick="setFilter('Industrie')" data-f="Industrie">Industrie</span>
+            <span class="chip" onclick="setFilter('Aérospatial')" data-f="Aérospatial">Aérospatial</span>
+            <span class="chip" onclick="setFilter('Matériaux')" data-f="Matériaux">Matériaux</span>
+          </div>
+          <div class="slist" id="slist"></div>
+        </div>
+        <div class="mktr">
+          <div class="dc">
+            <div class="de" id="de"><div class="eico">👆</div><p>Sélectionnez une action<br>pour voir les détails</p></div>
+            <div id="dcnt" style="display:none"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PORTEFEUILLE -->
+    <div id="panel-portefeuille" class="panel">
+      <div class="shdr"><div class="stit">Positions ouvertes</div></div>
+      <div class="twrap">
+        <table class="dt">
+          <thead><tr><th>Action</th><th>Qté</th><th>PRU</th><th>Cours actuel</th><th>Valeur</th><th>+/- value €</th><th>% gain</th><th></th></tr></thead>
+          <tbody id="pbody"><tr><td colspan="8"><div class="epty"><div class="eico2">📭</div><p>Aucune position.<br>Achetez dans l'onglet Marché.</p></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- HISTORIQUE -->
+    <div id="panel-historique" class="panel">
+      <div class="shdr"><div class="stit">Historique des opérations</div><button class="bsm2" onclick="exportHistory()">⬇ Exporter CSV</button></div>
+      <div class="twrap">
+        <table class="dt">
+          <thead><tr><th>Date & heure</th><th>Opération</th><th>Action</th><th>Quantité</th><th>Prix unitaire</th><th>Montant</th><th>Budget après</th></tr></thead>
+          <tbody id="hbody"><tr><td colspan="7"><div class="epty"><div class="eico2">📋</div><p>Aucune opération.</p></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- CLASSEMENT ÉLÈVE -->
+    <div id="panel-classement" class="panel">
+      <div class="lbgrid">
+        <div>
+          <div class="trow" id="podium"></div>
+          <div class="lbc">
+            <div class="lbh"><h3>📊 Stats de la classe</h3></div>
+            <div class="sgrid">
+              <div class="sb"><div class="sbl">Participants</div><div class="sbv" id="ls-nb">—</div></div>
+              <div class="sb"><div class="sbl">Meilleure perf.</div><div class="sbv pos" id="ls-best">—</div></div>
+              <div class="sb"><div class="sbl">Moyenne classe</div><div class="sbv" id="ls-avg">—</div></div>
+              <div class="sb"><div class="sbl">Budget moyen départ</div><div class="sbv" id="ls-budg">—</div></div>
+            </div>
+            <div class="lbif" id="lbif">⚡ Classement mis à jour à chaque transaction</div>
+          </div>
+        </div>
+        <div class="lbc">
+          <div class="lbh"><h3>🏆 Classement complet</h3><button class="bsm2" onclick="loadLB()">↻ Actualiser</button></div>
+          <div class="lbl" id="lblist"><div class="lbmt">Chargement...</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- APP ENSEIGNANT                                               -->
+<!-- ============================================================ -->
+<div id="teacher-app">
+  <nav class="teacher-nav">
+    <div class="tnb"><div class="tnbi">👨‍🏫</div>Espace Enseignant</div>
+    <div class="ttabs">
+      <button class="ttab active" onclick="switchTTab('eleves')">Élèves &amp; Portefeuilles</button>
+      <button class="ttab" onclick="switchTTab('classement')">🏆 Classement</button>
+      <button class="ttab" onclick="switchTTab('import')">Import Cotations</button>
+    </div>
+    <button class="t-logout" onclick="logoutTeacher()">← Quitter</button>
+  </nav>
+  <div class="tcontent">
+
+    <!-- STATS GLOBALES -->
+    <div class="t-stats">
+      <div class="tmc"><div class="tml">Élèves actifs</div><div class="tmv" id="t-nb">—</div></div>
+      <div class="tmc"><div class="tml">Meilleure perf.</div><div class="tmv pos" id="t-best">—</div></div>
+      <div class="tmc"><div class="tml">Moins bonne perf.</div><div class="tmv neg" id="t-worst">—</div></div>
+      <div class="tmc"><div class="tml">Moyenne classe</div><div class="tmv" id="t-avg">—</div></div>
+      <div class="tmc"><div class="tml">Dernière MAJ cotations</div><div class="tmv" id="t-lupd" style="font-size:12px">—</div></div>
+    </div>
+
+    <!-- PANEL ÉLÈVES -->
+    <div id="tpanel-eleves" class="tpanel active">
+      <div class="t-toolbar">
+        <div class="t-search"><span class="si">🔍</span><input type="text" id="t-srch" placeholder="Rechercher un élève..." oninput="filterStudents()"></div>
+        <button class="btn-warn" onclick="confirmDeleteAll()">🗑 Supprimer tout</button>
+        <button class="bsm2" onclick="refreshTeacher()">↻ Actualiser</button>
+      </div>
+      <div class="twrap">
+        <table class="dt" id="t-student-table">
+          <thead><tr><th>#</th><th>Élève</th><th>Budget initial</th><th>Budget dispo.</th><th>Valeur portef.</th><th>Valeur totale</th><th>+/- value €</th><th>Perf. %</th><th>Actions</th></tr></thead>
+          <tbody id="t-student-body"><tr><td colspan="9"><div class="epty"><div class="eico2">📭</div><p>Aucun élève enregistré.</p></div></td></tr></tbody>
+        </table>
+      </div>
+      <div id="student-detail-zone"></div>
+    </div>
+
+    <!-- PANEL CLASSEMENT ENSEIGNANT -->
+    <div id="tpanel-classement" class="tpanel">
+      <div class="shdr">
+        <div class="stit">🏆 Classement de la classe</div>
+        <button class="btn-info no-print" onclick="printClassement()">🖨 Imprimer le classement</button>
+      </div>
+      <div class="twrap" id="t-lb-wrap">
+        <table class="dt" id="t-lb-table">
+          <thead><tr><th>Rang</th><th>Élève</th><th>Budget initial</th><th>Budget dispo.</th><th>Valeur portef.</th><th>Valeur totale</th><th>+/- value €</th><th>Performance %</th></tr></thead>
+          <tbody id="t-lb-body"><tr><td colspan="8"><div class="epty"><div class="eico2">🏆</div><p>Aucun élève.</p></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PANEL IMPORT -->
+    <div id="tpanel-import" class="tpanel">
+      <div class="t-import-grid">
+        <div>
+          <div class="t-imp-card" style="margin-bottom:1rem">
+            <h3>📥 Importer les cotations — toute la classe</h3>
+            <p>L'import met à jour les cours pour <strong>tous les élèves simultanément</strong>. Les plus/moins-values de chaque portefeuille sont recalculées automatiquement.</p>
+            <div class="dz" id="t-dz" onclick="document.getElementById('t-cfi').click()">
+              <div class="dzico">📂</div><p>Cliquer ou glisser un fichier CSV ici</p>
+              <div class="dzh">Format : Ticker,Prix — ex: AI.PA,148.50</div>
+            </div>
+            <input type="file" id="t-cfi" accept=".csv,.txt" style="display:none" onchange="teacherImportCSV(event)">
+            <div class="ir" id="t-ir"></div>
+          </div>
+          <div class="t-imp-card">
+            <h3>⚙️ Générer le fichier CSV</h3>
+            <p>Téléchargez un modèle avec les 40 tickers. Renseignez les prix du jour et réimportez.</p>
+            <button class="gbtn gbtn-amber" onclick="genTemplate()">⬇ Modèle vierge — 40 tickers CAC40</button>
+            <button class="gbtn" onclick="genCurrentCSV()">⬇ Exporter les cours actuels en CSV</button>
+          </div>
+        </div>
+        <div class="t-imp-card">
+          <h3>📄 Format du fichier CSV</h3>
+          <p>Créez ou modifiez le fichier <code style="font-family:var(--mono);background:var(--surface2);padding:1px 5px;border-radius:3px">cotations.csv</code> avec les 40 actions :</p>
+          <div class="cb">Ticker,Prix
+AI.PA,148.50
+OR.PA,375.20
+TTE.PA,62.40
+BNP.PA,66.80
+SAN.PA,92.10
+MC.PA,625.00
+SAF.PA,213.40
+AIR.PA,163.20
+SGO.PA,83.50
+SU.PA,226.80
+...</div>
+          <p style="margin-top:9px;font-size:11px;color:var(--text3)">Tickers CAC40 : suffixe <span style="font-family:var(--mono)">.PA</span> (Paris Euronext)<br>Séparateur : virgule ou point-virgule accepté<br>Décimale : point ou virgule acceptés</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ZONE D'IMPRESSION -->
+<div id="print-zone"></div>
+
+<!-- MODALES -->
+<div class="modal-bg" id="pin-modal">
+  <div class="modal-box">
+    <h3>🔒 Code professeur requis</h3>
+    <p>Entrez le code pour réinitialiser votre portefeuille. Cette action est irréversible.</p>
+    <input type="password" class="pin-inp" id="pin-inp" placeholder="· · · ·" maxlength="10">
+    <div id="pin-err" style="font-size:11px;color:var(--red);font-family:var(--mono);margin-bottom:.7rem;display:none">Code incorrect ✗</div>
+    <div class="mbtns">
+      <button class="bcnl" onclick="closePinModal()">Annuler</button>
+      <button class="bdng" onclick="checkPin()">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="teacher-login-modal">
+  <div class="modal-box">
+    <h3>👨‍🏫 Connexion Enseignant</h3>
+    <p>Entrez le code d'accès à l'espace enseignant.</p>
+    <input type="password" class="pin-inp" id="t-pin-inp" placeholder="· · · ·" maxlength="10">
+    <div id="t-pin-err" style="font-size:11px;color:var(--red);font-family:var(--mono);margin-bottom:.7rem;display:none">Code incorrect ✗</div>
+    <div class="mbtns">
+      <button class="bcnl" onclick="closeTeacherLogin()">Annuler</button>
+      <button class="bamb" onclick="checkTeacherPin()">Accéder →</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="confirm-modal">
+  <div class="modal-box">
+    <h3 id="conf-title">Confirmer</h3>
+    <p id="conf-msg">Êtes-vous sûr ?</p>
+    <div class="mbtns">
+      <button class="bcnl" onclick="closeConfirm()">Annuler</button>
+      <button class="bdng" id="conf-btn" onclick="">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<div class="tc-ctr" id="toasts"></div>
+
+<script>
+// ============================================================
+// 40 ACTIONS CAC40
+// ============================================================
+const CAC40=[
+ {t:"AI.PA",n:"Air Liquide",s:"Industrie",p:"France",e:"67 000",r:"29,9 Md€",l:"💧",d:"Leader mondial des gaz industriels et médicaux (80 pays). Fondée en 1902, Air Liquide fournit des gaz, technologies et services à l'industrie, la santé et l'environnement. Valeur historique très stable du CAC40."},
+ {t:"OR.PA",n:"L'Oréal",s:"Cosmétiques",p:"France",e:"87 000",r:"41,2 Md€",l:"💄",d:"N°1 mondial de la beauté avec 36 marques (Lancôme, Maybelline, Garnier…). Fondée en 1909, présente dans 150 pays, investit massivement en R&D et innovation."},
+ {t:"TTE.PA",n:"TotalEnergies",s:"Énergie",p:"France",e:"105 000",r:"218 Md€",l:"⚡",d:"Major énergétique mondiale en transition vers les énergies propres. Présente dans 130+ pays. Objectif de neutralité carbone d'ici 2050."},
+ {t:"BNP.PA",n:"BNP Paribas",s:"Banque",p:"France",e:"185 000",r:"50,4 Md€",l:"🏦",d:"1ère banque de la zone euro, opérant dans 65 pays (banque de détail, gestion d'actifs, banque d'investissement). Sert 30 millions de clients."},
+ {t:"SAN.PA",n:"Sanofi",s:"Santé",p:"France",e:"91 000",r:"43 Md€",l:"💊",d:"Géant pharmaceutique français (vaccins, diabète, maladies rares). Plus de 6 Md€ investis en R&D annuellement. Présent dans 100 pays."},
+ {t:"MC.PA",n:"LVMH",s:"Luxe",p:"France",e:"196 000",r:"86,2 Md€",l:"👜",d:"N°1 mondial du luxe avec 75 maisons (Louis Vuitton, Dior, Moët & Chandon…). Empire construit par Bernard Arnault depuis 1987. Présent dans 80 pays."},
+ {t:"CAP.PA",n:"Capgemini",s:"Tech",p:"France",e:"340 000",r:"22,5 Md€",l:"💻",d:"Leader européen du conseil en transformation numérique et services IT. 340 000 collaborateurs dans 50 pays. Fondée en 1967 à Grenoble."},
+ {t:"DG.PA",n:"Vinci",s:"Industrie",p:"France",e:"280 000",r:"68 Md€",l:"🏗️",d:"Acteur mondial des concessions (autoroutes, aéroports) et construction. Présent dans 120 pays. Revenus stables et carnet de commandes record."},
+ {t:"CS.PA",n:"AXA",s:"Assurance",p:"France",e:"145 000",r:"102 Md€",l:"🛡️",d:"Leader mondial de l'assurance et gestion d'actifs dans 50 pays. Protège 95 millions de clients. Gère plus de 800 Md€ d'actifs."},
+ {t:"KER.PA",n:"Kering",s:"Luxe",p:"France",e:"47 000",r:"19,6 Md€",l:"✨",d:"Groupe de luxe avec Gucci, Saint Laurent, Bottega Veneta, Balenciaga. Mise sur créativité, durabilité et digital."},
+ {t:"HO.PA",n:"Thales",s:"Aérospatial",p:"France",e:"81 000",r:"18,8 Md€",l:"🛩️",d:"Groupe high-tech dans la défense, l'aérospatial et la cybersécurité. Présent dans 68 pays. Fort de la hausse des budgets de défense européens."},
+ {t:"RMS.PA",n:"Hermès",s:"Luxe",p:"France",e:"23 000",r:"13,4 Md€",l:"🎀",d:"Maison de luxe fondée en 1837 (sacs Birkin, Kelly, carrés de soie). Artisanat français, croissance maîtrisée. L'action la plus chère du CAC40."},
+ {t:"STM.PA",n:"STMicroelectronics",s:"Tech",p:"Fr/Italie",e:"50 000",r:"17,3 Md€",l:"🔌",d:"Fabricant franco-italien de puces électroniques pour l'automobile et l'industrie. Acteur clé de la transition électrique."},
+ {t:"VIE.PA",n:"Veolia",s:"Énergie",p:"France",e:"220 000",r:"42,9 Md€",l:"🌍",d:"Leader mondial des services à l'environnement (eau, déchets, énergie). Gère l'eau potable de 100 millions de personnes."},
+ {t:"ENR.PA",n:"Engie",s:"Énergie",p:"France",e:"96 000",r:"93,9 Md€",l:"🌬️",d:"Groupe énergétique mondial spécialisé dans la transition bas-carbone (éolien, solaire, hydrogène vert). Sert 24 millions de clients dans 31 pays."},
+ {t:"SGO.PA",n:"Saint-Gobain",s:"Matériaux",p:"France",e:"160 000",r:"47,9 Md€",l:"🔩",d:"Leader mondial des matériaux de construction (verre, isolants, plâtre). Fondée en 1665 sous Louis XIV. En forte croissance avec la rénovation énergétique."},
+ {t:"PUB.PA",n:"Publicis",s:"Tech",p:"France",e:"103 000",r:"14,9 Md€",l:"📢",d:"3ème groupe de communication et marketing mondial dans 100 pays. En forte croissance grâce à la data, au commerce connecté et à l'IA."},
+ {t:"RI.PA",n:"Pernod Ricard",s:"Cosmétiques",p:"France",e:"19 000",r:"11,6 Md€",l:"🍾",d:"2ème acteur mondial des spiritueux (Absolut, Jameson, Martell, Mumm). Mise sur le premium et les marchés émergents."},
+ {t:"WLN.PA",n:"Worldline",s:"Tech",p:"France",e:"18 000",r:"4,6 Md€",l:"💳",d:"Leader européen des services de paiement et transaction. Bénéficie de l'essor du e-commerce et de la digitalisation."},
+ {t:"DSY.PA",n:"Dassault Systèmes",s:"Tech",p:"France",e:"23 000",r:"6,0 Md€",l:"🖥️",d:"Éditeur de logiciels 3D (CATIA, SOLIDWORKS) pour l'aéronautique, l'automobile et les sciences de la vie. 300 000 entreprises clientes."},
+ {t:"SU.PA",n:"Schneider Electric",s:"Industrie",p:"France",e:"150 000",r:"36,2 Md€",l:"🔋",d:"Leader mondial de la gestion de l'énergie et de l'automatisation. Aide les entreprises à réduire leur consommation électrique dans 100+ pays."},
+ {t:"SAF.PA",n:"Safran",s:"Aérospatial",p:"France",e:"100 000",r:"24,6 Md€",l:"✈️",d:"Équipementier aéronautique majeur, fabricant des moteurs CFM56 et LEAP (avec GE). Carnet de commandes record avec la reprise du trafic aérien."},
+ {t:"AIR.PA",n:"Airbus",s:"Aérospatial",p:"Europe",e:"134 000",r:"65,4 Md€",l:"🚀",d:"1er avionneur mondial (familles A320, A330, A350). Champion européen de l'aéronautique. Carnet de commandes de 8 000+ avions."},
+ {t:"BN.PA",n:"Danone",s:"Santé",p:"France",e:"98 000",r:"27,7 Md€",l:"🥛",d:"Groupe alimentaire mondial (Activia, Evian, Volvic, Nutricia). Stratégie 'une planète une santé' alliant performance et impact positif."},
+ {t:"EL.PA",n:"EssilorLuxottica",s:"Santé",p:"Fr/Italie",e:"190 000",r:"24,5 Md€",l:"👓",d:"Leader mondial de l'optique (Essilor + Luxottica, Ray-Ban, Oakley). Équipe plus d'un milliard de personnes. Contrôle toute la chaîne de valeur."},
+ {t:"ORA.PA",n:"Orange",s:"Tech",p:"France",e:"137 000",r:"44,1 Md€",l:"📱",d:"Opérateur télécom historique français dans 26 pays. Développe fibre, 5G et services numériques. L'Afrique est le principal moteur de croissance."},
+ {t:"ML.PA",n:"Michelin",s:"Industrie",p:"France",e:"132 000",r:"28,6 Md€",l:"🚗",d:"Leader mondial du pneumatique sur tous les marchés. Innove avec des pneus connectés et durables. Développe aussi le Guide Michelin et ViaMichelin."},
+ {t:"GLE.PA",n:"Société Générale",s:"Banque",p:"France",e:"117 000",r:"25,8 Md€",l:"🏛️",d:"3ème banque française fondée en 1864. Présente dans la banque de détail, banque d'investissement et gestion d'actifs dans 60 pays."},
+ {t:"CA.PA",n:"Carrefour",s:"Distribution",p:"France",e:"320 000",r:"94,1 Md€",l:"🛒",d:"2ème distributeur mondial, pionnier du concept d'hypermarché. Présent dans 30 pays avec 13 000+ magasins. Accélère sur le e-commerce alimentaire."},
+ {t:"BK.PA",n:"SEB",s:"Industrie",p:"France",e:"34 000",r:"8,1 Md€",l:"🍳",d:"Leader mondial du petit électroménager (Tefal, Rowenta, Moulinex, Krups). Distribue dans 150 pays. Innove dans la cuisine connectée."},
+ {t:"VIV.PA",n:"Vivendi",s:"Tech",p:"France",e:"40 000",r:"9,6 Md€",l:"🎬",d:"Groupe de médias (Canal+, Hachette, Havas). En pleine recomposition stratégique avec des cessions et acquisitions majeures dans les contenus."},
+ {t:"URW.PA",n:"Unibail-Rodamco",s:"Immobilier",p:"Pays-Bas/Fr",e:"3 500",r:"2,8 Md€",l:"🏬",d:"Premier propriétaire de centres commerciaux premium en Europe et aux États-Unis (Westfield). Transforme ses centres en lieux de vie mixtes."},
+ {t:"ERF.PA",n:"Eurofins",s:"Santé",p:"Luxembourg",e:"62 000",r:"7,0 Md€",l:"🔬",d:"Leader mondial des services de bioanalyse et tests scientifiques. Incontournable pendant le Covid-19. Réalise 450 millions de tests par an dans 62 pays."},
+ {t:"LR.PA",n:"Legrand",s:"Industrie",p:"France",e:"40 000",r:"8,4 Md€",l:"🔦",d:"Leader mondial des infrastructures électriques du bâtiment. Fabrique prises, interrupteurs, tableaux électriques et systèmes domotiques dans 90 pays."},
+ {t:"SW.PA",n:"Sodexo",s:"Distribution",p:"France",e:"430 000",r:"23,4 Md€",l:"🍽️",d:"Leader mondial de la restauration collective dans 56 pays. Sert 100 millions de consommateurs par jour dans entreprises, hôpitaux et écoles."},
+ {t:"AKE.PA",n:"Arkema",s:"Matériaux",p:"France",e:"21 000",r:"9,5 Md€",l:"🧪",d:"Chimiste de spécialité (adhésifs Bostik, polymères techniques). Mise sur des matériaux innovants pour la mobilité électrique et la construction durable."},
+ {t:"AF.PA",n:"Air France-KLM",s:"Aérospatial",p:"France",e:"81 000",r:"20,4 Md€",l:"🛫",d:"Premier groupe de transport aérien en Europe (Air France, KLM, Transavia). Reprend après le Covid mais fait face à des défis de rentabilité et transition verte."},
+ {t:"RNO.PA",n:"Renault",s:"Industrie",p:"France",e:"105 000",r:"52,4 Md€",l:"🚘",d:"Constructeur automobile français dans 128 pays (Renault, Dacia, Alpine). À la pointe de l'électrique en Europe avec la Mégane E-Tech et la nouvelle Renault 5."},
+ {t:"PEU.PA",n:"Stellantis",s:"Industrie",p:"Fr/Italie",e:"300 000",r:"189,5 Md€",l:"🏎️",d:"4ème constructeur automobile mondial (Peugeot, Citroën, Fiat, Jeep, Maserati…). Né de la fusion PSA-Fiat en 2021. Accélère vers le 100% électrique."},
+ {t:"ATO.PA",n:"Atos",s:"Tech",p:"France",e:"90 000",r:"11,3 Md€",l:"🖧",d:"Groupe de services numériques (cybersécurité, cloud, supercalculateurs). Gère des SI d'États et grandes entreprises. En restructuration financière majeure."}
+];
+
+const BP={"AI.PA":148.2,"OR.PA":372.5,"TTE.PA":61.4,"BNP.PA":66.8,"SAN.PA":91.3,"MC.PA":618.5,"CAP.PA":198.4,"DG.PA":130.2,"CS.PA":33.5,"KER.PA":244.0,"HO.PA":172.8,"RMS.PA":2060.0,"STM.PA":28.4,"VIE.PA":27.6,"ENR.PA":14.2,"SGO.PA":82.1,"PUB.PA":89.3,"RI.PA":92.8,"WLN.PA":6.4,"DSY.PA":27.8,"SU.PA":225.4,"SAF.PA":212.3,"AIR.PA":162.5,"BN.PA":28.9,"EL.PA":198.7,"ORA.PA":11.2,"ML.PA":33.4,"GLE.PA":28.6,"CA.PA":17.4,"BK.PA":148.6,"VIV.PA":9.8,"URW.PA":62.4,"ERF.PA":52.3,"LR.PA":89.4,"SW.PA":78.2,"AKE.PA":72.6,"AF.PA":8.7,"RNO.PA":42.1,"PEU.PA":16.8,"ATO.PA":3.8};
+
+// ============================================================
+// CLÉS DE STOCKAGE
+// ============================================================
+const SK='cac40_v3';          // état élève courant
+const LB_KEY='cac40_lb';     // leaderboard (tous les élèves de cet appareil)
+const PRICES_KEY='cac40_prices'; // cours partagés (mis à jour par l'enseignant)
+const PIN='1979';
+
+// ============================================================
+// STATE ÉLÈVE
+// ============================================================
+let S={initialized:false,studentName:'',initBudget:0,budget:0,holdings:{},history:[],prices:{},lastUpdate:null,selTicker:null,activeFilter:'',searchQ:''};
+
+function sv(){try{localStorage.setItem(SK,JSON.stringify(S));pushLB();}catch(e){}}
+function ldState(){try{const r=localStorage.getItem(SK);if(r){S=JSON.parse(r);return true;}}catch(e){}return false;}
+
+// Cours partagés (enseignant → élèves)
+function getSharedPrices(){try{const r=localStorage.getItem(PRICES_KEY);return r?JSON.parse(r):null;}catch(e){return null;}}
+function setSharedPrices(prices,ts){try{localStorage.setItem(PRICES_KEY,JSON.stringify({prices,ts}));}catch(e){}}
+
+// ============================================================
+// UTILS
+// ============================================================
+function fmt(n){return new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',minimumFractionDigits:2,maximumFractionDigits:2}).format(n);}
+function fmtP(n){return(n>=0?'+':'')+n.toFixed(2)+'%';}
+function now(){return new Date().toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});}
+function ini(name){return name.split(' ').filter(Boolean).map(w=>w[0].toUpperCase()).slice(0,2).join('');}
+function portVal(){return Object.entries(S.holdings).reduce((s,[t,h])=>{const p=S.prices[t];return s+(p?p.price*h.qty:h.totalCost);},0);}
+function totVal(){return S.budget+portVal();}
+
+// ============================================================
+// TOAST
+// ============================================================
+function toast(msg,type='ok'){const c=document.getElementById('toasts');const el=document.createElement('div');el.className=`toast ${type}`;el.textContent=msg;c.appendChild(el);setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity .3s';setTimeout(()=>el.remove(),300);},3200);}
+
+// ============================================================
+// NAVIGATION ACCUEIL
+// ============================================================
+function showHome(){
+  document.getElementById('home-screen').style.display='flex';
+  document.getElementById('init-screen').style.display='none';
+  document.getElementById('main-app').style.display='none';
+  document.getElementById('teacher-app').style.display='none';
+}
+function showStudentInit(){
+  document.getElementById('home-screen').style.display='none';
+  document.getElementById('init-screen').style.display='flex';
+}
+function showTeacherLogin(){
+  document.getElementById('t-pin-inp').value='';
+  document.getElementById('t-pin-err').style.display='none';
+  const m=document.getElementById('teacher-login-modal');m.style.display='flex';
+  setTimeout(()=>document.getElementById('t-pin-inp').focus(),100);
+}
+function closeTeacherLogin(){document.getElementById('teacher-login-modal').style.display='none';}
+function checkTeacherPin(){
+  if(document.getElementById('t-pin-inp').value===PIN){closeTeacherLogin();launchTeacher();}
+  else{document.getElementById('t-pin-err').style.display='block';}
+}
+document.getElementById('t-pin-inp').addEventListener('keydown',e=>{if(e.key==='Enter')checkTeacherPin();});
+
+function launchTeacher(){
+  document.getElementById('home-screen').style.display='none';
+  document.getElementById('teacher-app').style.display='block';
+  // Sync cours partagés dans S si dispo
+  if(!S.prices||Object.keys(S.prices).length===0)genPrices();
+  refreshTeacher();
+}
+function logoutTeacher(){document.getElementById('teacher-app').style.display='none';showHome();}
+
+// ============================================================
+// LEADERBOARD
+// ============================================================
+function pushLB(){
+  if(!S.initialized)return;
+  try{
+    const lb=JSON.parse(localStorage.getItem(LB_KEY)||'{}');
+    lb[S.studentName]={name:S.studentName,initBudget:S.initBudget,budget:S.budget,portVal:portVal(),total:totVal(),pnl:totVal()-S.initBudget,pct:((totVal()-S.initBudget)/S.initBudget*100),ts:Date.now()};
+    localStorage.setItem(LB_KEY,JSON.stringify(lb));
+  }catch(e){}
+}
+function getLB(){try{return Object.values(JSON.parse(localStorage.getItem(LB_KEY)||'{}')).sort((a,b)=>b.pct-a.pct);}catch(e){return[];}}
+
+// ============================================================
+// PIN ÉLÈVE (réinitialiser)
+// ============================================================
+function openPinModal(){document.getElementById('pin-inp').value='';document.getElementById('pin-err').style.display='none';const m=document.getElementById('pin-modal');m.style.display='flex';setTimeout(()=>document.getElementById('pin-inp').focus(),100);}
+function closePinModal(){document.getElementById('pin-modal').style.display='none';}
+function checkPin(){
+  if(document.getElementById('pin-inp').value===PIN){closePinModal();resetCurrentStudent();}
+  else{document.getElementById('pin-err').style.display='block';}
+}
+document.getElementById('pin-inp').addEventListener('keydown',e=>{if(e.key==='Enter')checkPin();});
+
+function resetCurrentStudent(){
+  if(!S.studentName)return;
+  const lb=JSON.parse(localStorage.getItem(LB_KEY)||'{}');
+  delete lb[S.studentName];
+  localStorage.setItem(LB_KEY,JSON.stringify(lb));
+  localStorage.removeItem(SK);
+  location.reload();
+}
+
+// ============================================================
+// CONFIRM MODAL GÉNÉRIQUE
+// ============================================================
+let _confirmCb=null;
+function openConfirm(title,msg,cb,danger=true){
+  document.getElementById('conf-title').textContent=title;
+  document.getElementById('conf-msg').textContent=msg;
+  _confirmCb=cb;
+  const btn=document.getElementById('conf-btn');
+  btn.className=danger?'bdng':'bamb';
+  btn.onclick=()=>{closeConfirm();if(_confirmCb)_confirmCb();};
+  document.getElementById('confirm-modal').style.display='flex';
+}
+function closeConfirm(){document.getElementById('confirm-modal').style.display='none';}
+
+// ============================================================
+// INIT ÉLÈVE
+// ============================================================
+function sb(v){document.getElementById('ib').value=v;}
+function initPortfolio(){
+  const p=document.getElementById('ip').value.trim(),n=document.getElementById('in').value.trim(),b=parseFloat(document.getElementById('ib').value);
+  if(!p||!n){toast('Entrez votre prénom et nom','err');return;}
+  if(!b||b<100){toast('Budget minimum : 100 €','err');return;}
+  S.studentName=p+' '+n.toUpperCase();S.initBudget=b;S.budget=b;S.initialized=true;
+  // Appliquer les cours partagés si l'enseignant a importé
+  sv();launch();
+}
+
+function launch(){
+  document.getElementById('init-screen').style.display='none';
+  document.getElementById('main-app').style.display='block';
+  document.getElementById('home-screen').style.display='none';
+  document.getElementById('nav-nm').textContent=S.studentName;
+  document.getElementById('nav-av').textContent=ini(S.studentName);
+  // Appliquer cours partagés si plus récents
+  const sp=getSharedPrices();
+  if(sp&&(!S.lastUpdate||sp.ts>S.lastUpdate)){S.prices=sp.prices;S.lastUpdate=sp.ts;sv();}
+  renderList();updMetrics();renderPort();renderHist();
+  loadPricesAuto();
+  startPricePolling();
+}
+
+// ============================================================
+// PRIX — chargement automatique (API → enseignant → simulé)
+// ============================================================
+
+// URL du proxy Netlify — détectée automatiquement selon l'environnement
+const PROXY_URL = (() => {
+  const h = window.location.hostname;
+  // Sur Netlify ou localhost avec netlify dev
+  if (h.includes('netlify') || h.includes('localhost') || h.includes('127.0.0.1')) {
+    return '/.netlify/functions/quotes';
+  }
+  // Sur GitHub Pages → même domaine impossible, on cherche un proxy déployé séparément
+  // Si vous avez déployé aussi sur Netlify, remplacez par votre URL Netlify ci-dessous :
+  // return 'https://votre-site.netlify.app/.netlify/functions/quotes';
+  return null;
+})();
+
+function setPriceStatus(text, color='var(--text3)', live=false) {
+  const dot = document.getElementById('price-dot');
+  const lbl = document.getElementById('price-status');
+  if (!dot || !lbl) return;
+  dot.style.background = color;
+  dot.style.animation = live ? 'pulseDot 2s infinite' : 'none';
+  lbl.textContent = text;
+}
+
+// Injecter l'animation CSS pour le dot si pas déjà fait
+if (!document.getElementById('pulse-style')) {
+  const st = document.createElement('style');
+  st.id = 'pulse-style';
+  st.textContent = '@keyframes pulseDot{0%,100%{opacity:1}50%{opacity:.3}}';
+  document.head.appendChild(st);
+}
+
+// Simuler les prix (fallback ultime)
+function genPrices(keep=false){
+  CAC40.forEach(s=>{
+    const base=(keep&&S.prices[s.t])?S.prices[s.t].price:BP[s.t]||50;
+    const v=(Math.random()-.47)*.035;
+    S.prices[s.t]={price:parseFloat((base*(1+v)).toFixed(2)),change:parseFloat((v*100).toFixed(2)),prev:base};
+  });
+  S.lastUpdate=now();
+}
+
+// Charger depuis le proxy Yahoo Finance
+async function fetchYahooPrices() {
+  if (!PROXY_URL) return false;
+  try {
+    setPriceStatus('Connexion Yahoo Finance…','var(--amber)',false);
+    const res = await fetch(PROXY_URL, { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+    if (!data.ok || !data.prices) throw new Error(data.error||'Pas de données');
+    // Fusionner : conserver les tickers manquants avec leurs anciens prix
+    CAC40.forEach(s => {
+      if (data.prices[s.t]) {
+        S.prices[s.t] = data.prices[s.t];
+      } else if (!S.prices[s.t]) {
+        // fallback simulé pour ce ticker manquant
+        const base = BP[s.t]||50;
+        S.prices[s.t] = {price:base, change:0, prev:base};
+      }
+    });
+    S.lastUpdate = data.ts || now();
+    S.priceSource = 'yahoo';
+    return true;
+  } catch(e) {
+    console.warn('Yahoo Finance proxy:', e.message);
+    return false;
+  }
+}
+
+// Charger depuis les cours partagés par l'enseignant
+function applyTeacherPrices() {
+  const sp = getSharedPrices();
+  if (!sp) return false;
+  S.prices = sp.prices;
+  S.lastUpdate = sp.ts;
+  S.priceSource = 'teacher';
+  return true;
+}
+
+// Stratégie de chargement : Yahoo → Enseignant → Simulé
+async function loadPricesAuto(silent=false) {
+  if (!silent) setPriceStatus('Chargement des cours…','var(--amber)',false);
+
+  // 1. Essai Yahoo Finance
+  const yahoo = await fetchYahooPrices();
+  if (yahoo) {
+    sv();
+    renderList(); updMetrics(); renderPort();
+    if (S.selTicker) showDetail(S.selTicker);
+    setPriceStatus('Cours en direct · Yahoo Finance · ' + S.lastUpdate, 'var(--green)', true);
+    return;
+  }
+
+  // 2. Cours importés par l'enseignant
+  if (applyTeacherPrices()) {
+    sv();
+    renderList(); updMetrics(); renderPort();
+    if (S.selTicker) showDetail(S.selTicker);
+    setPriceStatus('Cours enseignant · ' + S.lastUpdate, 'var(--blue)', false);
+    return;
+  }
+
+  // 3. Cours simulés (fallback)
+  genPrices(Object.keys(S.prices).length > 0);
+  sv();
+  renderList(); updMetrics(); renderPort();
+  if (S.selTicker) showDetail(S.selTicker);
+  setPriceStatus('Cours simulés · ' + S.lastUpdate, 'var(--text3)', false);
+}
+
+// Vérifier périodiquement si l'enseignant a importé de nouveaux cours (toutes les 60s)
+let _priceInterval = null;
+function startPricePolling() {
+  if (_priceInterval) return;
+  _priceInterval = setInterval(() => {
+    loadPricesAuto(true);
+  }, 60000); // 60 secondes
+}
+
+// ============================================================
+// MÉTRIQUES ÉLÈVE
+// ============================================================
+function updMetrics(){
+  const pv=portVal(),tot=S.budget+pv,pnl=tot-S.initBudget,pct=(pnl/S.initBudget)*100;
+  document.getElementById('mb').textContent=fmt(S.budget);
+  document.getElementById('mp').textContent=fmt(pv);
+  document.getElementById('mt').textContent=fmt(tot);
+  const el=document.getElementById('mpnl');el.textContent=(pnl>=0?'+':'')+fmt(pnl);el.className='mv '+(pnl>=0?'pos':'neg');
+  document.getElementById('msub').textContent=fmtP(pct)+' depuis le départ';
+}
+
+// ============================================================
+// TABS ÉLÈVE
+// ============================================================
+function switchTab(name){
+  document.querySelectorAll('.ntab').forEach((t,i)=>{const ns=['marche','portefeuille','historique','classement'];t.classList.toggle('active',ns[i]===name);});
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  if(name==='portefeuille')renderPort();if(name==='historique')renderHist();if(name==='classement'){loadLB();}
+}
+
+// ============================================================
+// MARCHÉ
+// ============================================================
+function setFilter(f){S.activeFilter=f;document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('active',c.dataset.f===f));renderList();}
+function filterStocks(){S.searchQ=document.getElementById('srch').value.toLowerCase();renderList();}
+function renderList(){
+  const list=document.getElementById('slist');let stocks=CAC40;
+  if(S.searchQ)stocks=stocks.filter(s=>s.n.toLowerCase().includes(S.searchQ)||s.t.toLowerCase().includes(S.searchQ)||s.s.toLowerCase().includes(S.searchQ));
+  if(S.activeFilter)stocks=stocks.filter(s=>s.s.includes(S.activeFilter));
+  if(!stocks.length){list.innerHTML='<div style="padding:1.5rem;text-align:center;color:var(--text3);font-size:12px">Aucun résultat</div>';return;}
+  list.innerHTML=stocks.map(s=>{
+    const p=S.prices[s.t],h=S.holdings[s.t];const cc=p&&p.change>=0?'pos':'neg';
+    return`<div class="srow${S.selTicker===s.t?' sel':''}" onclick="showDetail('${s.t}')">
+      <div class="sico">${s.l}</div>
+      <div class="sinf"><div class="snm">${s.n}</div><div class="smt">${s.t} · ${s.s}</div>${h?`<div class="shd">✓ ${h.qty} · PRU ${fmt(h.totalCost/h.qty)}</div>`:''}</div>
+      <div class="spc"><div class="spv ${cc}">${p?fmt(p.price):'—'}</div><div class="scv ${cc}">${p?(p.change>=0?'+':'')+p.change.toFixed(2)+'%':''}</div></div>
+    </div>`;
+  }).join('');
+  if(S.lastUpdate)document.getElementById('lupd').textContent='Màj : '+S.lastUpdate;
+}
+
+function showDetail(ticker){
+  S.selTicker=ticker;renderList();
+  const s=CAC40.find(x=>x.t===ticker),p=S.prices[ticker],h=S.holdings[ticker];
+  const pru=h?h.totalCost/h.qty:null,hv=h&&p?p.price*h.qty:null,hp=h&&p?hv-h.totalCost:null;
+  document.getElementById('de').style.display='none';const dc=document.getElementById('dcnt');dc.style.display='block';
+  dc.innerHTML=`<div class="dh">
+    <div class="dtop">
+      <div class="dico">${s.l}</div>
+      <div><div class="dtt">${s.n}</div><div class="dtk">${s.t}</div></div>
+      <div class="dpb"><div class="dpr ${p&&p.change>=0?'pos':'neg'}">${p?fmt(p.price):'—'}</div><div class="dch ${p&&p.change>=0?'pos':'neg'}">${p?(p.change>=0?'+':'')+p.change.toFixed(2)+'% auj.':''}</div></div>
+    </div>
+    <div class="dbg"><span class="badge bs">${s.s}</span><span class="badge bc">🇫🇷 ${s.p}</span>${h?`<span class="badge bh">✓ ${h.qty}</span>`:''}</div>
+  </div>
+  <div class="dds">${s.d}</div>
+  <div class="dss">
+    <div class="dst"><div class="dsl">Effectifs</div><div class="dsv">${s.e}</div></div>
+    <div class="dst"><div class="dsl">Chiffre d'affaires</div><div class="dsv">${s.r}</div></div>
+    ${h?`<div class="dst"><div class="dsl">PRU</div><div class="dsv">${fmt(pru)}</div></div><div class="dst"><div class="dsl">+/- value</div><div class="dsv ${hp>=0?'pos':'neg'}">${fmt(hp)}</div></div>`:''}
+  </div>
+  ${h?`<div class="dhi">Position : ${h.qty} action(s) · Valeur : ${fmt(hv)} · Gain : ${fmt(hp)} (${fmtP(hp/h.totalCost*100)})</div>`:''}
+  <div class="trd">
+    <div class="trl">Passer un ordre</div>
+    <div class="trr"><span style="font-size:11px;color:var(--text2)">Quantité :</span><input type="number" id="qi" value="1" min="1" max="99999" step="1" oninput="updTot()"><span id="ttot" style="font-size:10px;color:var(--text2);font-family:var(--mono)"></span></div>
+    <div class="trb"><button class="btn-buy" onclick="trade('buy')">↑ Acheter</button><button class="btn-sell" onclick="trade('sell')" ${!h?'disabled':''}>↓ Vendre</button></div>
+    <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:6px">Budget dispo : ${fmt(S.budget)}</div>
+  </div>`;
+  updTot();
+}
+function updTot(){const t=S.selTicker;if(!t)return;const q=parseInt(document.getElementById('qi')?.value)||0,p=S.prices[t];const el=document.getElementById('ttot');if(el&&p)el.textContent='= '+fmt(p.price*q);}
+
+function trade(type){
+  const ticker=S.selTicker;if(!ticker)return;
+  const qty=parseInt(document.getElementById('qi').value);if(!qty||qty<1){toast('Quantité invalide','err');return;}
+  const p=S.prices[ticker];if(!p){toast('Prix non disponible','err');return;}
+  const total=parseFloat((p.price*qty).toFixed(2));const s=CAC40.find(x=>x.t===ticker);
+  if(type==='buy'){
+    if(total>S.budget){toast(`Budget insuffisant — manque ${fmt(total-S.budget)}`,'err');return;}
+    S.budget=parseFloat((S.budget-total).toFixed(2));
+    if(!S.holdings[ticker])S.holdings[ticker]={qty:0,totalCost:0};
+    S.holdings[ticker].qty+=qty;S.holdings[ticker].totalCost=parseFloat((S.holdings[ticker].totalCost+total).toFixed(2));
+    S.history.unshift({date:now(),type:'Achat',ticker,name:s.n,qty,price:p.price,total,budgetAfter:S.budget});
+    toast(`✓ Achat : ${qty} × ${s.n} à ${fmt(p.price)}`);
+  } else {
+    const h=S.holdings[ticker];if(!h||h.qty<qty){toast(`Vous ne possédez que ${h?h.qty:0} action(s)`,'err');return;}
+    const cb=parseFloat(((h.totalCost/h.qty)*qty).toFixed(2));
+    S.budget=parseFloat((S.budget+total).toFixed(2));h.qty-=qty;h.totalCost=parseFloat((h.totalCost-cb).toFixed(2));
+    if(h.qty===0)delete S.holdings[ticker];
+    S.history.unshift({date:now(),type:'Vente',ticker,name:s.n,qty,price:p.price,total,budgetAfter:S.budget});
+    toast(`✓ Vente : ${qty} × ${s.n} à ${fmt(p.price)}`);
+  }
+  sv();updMetrics();showDetail(ticker);renderList();
+}
+
+// ============================================================
+// PORTEFEUILLE
+// ============================================================
+function renderPort(){
+  const tb=document.getElementById('pbody'),entries=Object.entries(S.holdings);
+  if(!entries.length){tb.innerHTML='<tr><td colspan="8"><div class="epty"><div class="eico2">📭</div><p>Aucune position.<br>Achetez dans l\'onglet Marché.</p></div></td></tr>';return;}
+  tb.innerHTML=entries.map(([ticker,h])=>{
+    const s=CAC40.find(x=>x.t===ticker),p=S.prices[ticker];
+    const pru=h.totalCost/h.qty,cur=p?p.price:pru,val=cur*h.qty,pnl=val-h.totalCost,pct=(pnl/h.totalCost)*100;
+    return`<tr><td><div class="cn">${s?s.l:''} ${s?s.n:ticker}</div><div class="csb">${ticker}</div></td><td class="cm">${h.qty}</td><td class="cm">${fmt(pru)}</td><td class="cm ${p&&p.change>=0?'pos':'neg'}">${p?fmt(p.price):'—'}</td><td class="cm">${fmt(val)}</td><td class="pc ${pnl>=0?'pos':'neg'}">${fmt(pnl)}</td><td class="pc ${pct>=0?'pos':'neg'}">${fmtP(pct)}</td><td><button class="bsm" onclick="qSell('${ticker}')">Tout vendre</button></td></tr>`;
+  }).join('');
+}
+function qSell(ticker){
+  const h=S.holdings[ticker];if(!h)return;const p=S.prices[ticker],s=CAC40.find(x=>x.t===ticker),total=parseFloat((p.price*h.qty).toFixed(2));
+  S.budget=parseFloat((S.budget+total).toFixed(2));S.history.unshift({date:now(),type:'Vente',ticker,name:s.n,qty:h.qty,price:p.price,total,budgetAfter:S.budget});
+  delete S.holdings[ticker];sv();updMetrics();renderPort();renderList();
+  if(S.selTicker===ticker){S.selTicker=null;document.getElementById('de').style.display='block';document.getElementById('dcnt').style.display='none';}
+  toast(`✓ ${ticker} liquidé — ${fmt(total)} crédités`);
+}
+
+// ============================================================
+// HISTORIQUE
+// ============================================================
+function renderHist(){
+  const tb=document.getElementById('hbody');
+  if(!S.history.length){tb.innerHTML='<tr><td colspan="7"><div class="epty"><div class="eico2">📋</div><p>Aucune opération.</p></div></td></tr>';return;}
+  tb.innerHTML=S.history.map(op=>{const a=op.type==='Achat';
+    return`<tr><td class="cm" style="color:var(--text3)">${op.date}</td><td><span class="bop ${a?'bop-b':'bop-s'}">${op.type}</span></td><td><div class="cn">${op.name}</div><div class="csb">${op.ticker}</div></td><td class="cm">${op.qty}</td><td class="cm">${fmt(op.price)}</td><td class="cm ${a?'neg':'pos'}">${a?'−':'+'}${fmt(op.total)}</td><td class="cm">${fmt(op.budgetAfter)}</td></tr>`;
+  }).join('');
+}
+function exportHistory(){
+  if(!S.history.length){toast('Aucune opération','err');return;}
+  const rows=[['Date','Type','Ticker','Action','Quantité','Prix','Montant','Budget après']];
+  S.history.forEach(o=>rows.push([o.date,o.type,o.ticker,o.name,o.qty,o.price.toFixed(2),o.total.toFixed(2),o.budgetAfter.toFixed(2)]));
+  dlCSV(rows.map(r=>r.join(';')).join('\n'),`historique_${S.studentName.replace(/\s+/g,'_')}.csv`);toast('Exporté !');
+}
+
+// ============================================================
+// CLASSEMENT ÉLÈVE
+// ============================================================
+function loadLB(){
+  const entries=getLB();renderLB(entries);
+}
+function renderLB(entries){
+  const podium=document.getElementById('podium');
+  const medals=['🥇','🥈','🥉'],mc=['mg','ms2','mb'],ml=['1ère place','2ème place','3ème place'];
+  if(!entries.length){podium.innerHTML='<div style="font-size:12px;color:var(--text3);text-align:center;padding:1rem">Aucun participant sur cet appareil</div>';}
+  else{podium.innerHTML=entries.slice(0,3).map((e,i)=>`<div class="tc ${mc[i]||''}"><div class="tci">${medals[i]||'🏅'}</div><div><div class="tcp">${ml[i]||''}</div><div class="tcn">${e.name}</div><div class="tcv">${fmt(e.total)} · ${e.pct>=0?'+':''}${e.pct.toFixed(2)}%</div></div></div>`).join('');}
+  const nb=entries.length,best=entries[0],avg=nb?entries.reduce((s,e)=>s+e.pct,0)/nb:0,avgB=nb?entries.reduce((s,e)=>s+e.initBudget,0)/nb:0;
+  document.getElementById('ls-nb').textContent=nb+' élève'+(nb>1?'s':'');
+  document.getElementById('ls-best').textContent=best?(best.pct>=0?'+':'')+best.pct.toFixed(2)+'%':'—';
+  document.getElementById('ls-avg').textContent=(avg>=0?'+':'')+avg.toFixed(2)+'%';
+  document.getElementById('ls-budg').textContent=fmt(avgB);
+  const list=document.getElementById('lblist');
+  if(!entries.length){list.innerHTML='<div class="lbmt">Aucun participant.<br><small>Sur un même appareil, tous les élèves apparaissent ici.</small></div>';return;}
+  const rk=['gold','silver','bronze'];
+  list.innerHTML=entries.map((e,i)=>{const isMe=e.name===S.studentName;
+    return`<div class="lbrow${isMe?' me':''}"><div class="lbrnk ${rk[i]||''}">${i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}</div><div class="lbav">${ini(e.name)}</div><div class="lbnm">${e.name}${isMe?' <span style="font-size:10px;color:var(--blue);font-family:var(--mono)">(moi)</span>':''}</div><div class="lbvl"><div class="lbtot">${fmt(e.total)}</div><div class="lbpnl ${e.pct>=0?'pos':'neg'}">${e.pct>=0?'+':''}${e.pct.toFixed(2)}%</div></div></div>`;
+  }).join('');
+  document.getElementById('lbif').textContent=`⚡ ${nb} participant(s) — mis à jour à chaque transaction`;
+}
+
+// ============================================================
+// ENSEIGNANT — TABS
+// ============================================================
+function switchTTab(name){
+  document.querySelectorAll('.ttab').forEach((t,i)=>{const ns=['eleves','classement','import'];t.classList.toggle('active',ns[i]===name);});
+  document.querySelectorAll('.tpanel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tpanel-'+name).classList.add('active');
+  if(name==='classement')renderTeacherLB();
+  if(name==='eleves')refreshTeacher();
+}
+
+// ============================================================
+// ENSEIGNANT — VUE ÉLÈVES
+// ============================================================
+let teacherFilter='';
+function filterStudents(){teacherFilter=document.getElementById('t-srch').value.toLowerCase();renderStudentTable();}
+
+function refreshTeacher(){
+  if(!S.prices||Object.keys(S.prices).length===0)genPrices();
+  renderStudentTable();
+  renderTeacherStats();
+  document.getElementById('t-lupd').textContent=S.lastUpdate||'—';
+}
+
+function renderStudentTable(){
+  const entries=getLB().filter(e=>!teacherFilter||e.name.toLowerCase().includes(teacherFilter));
+  const tb=document.getElementById('t-student-body');
+  if(!entries.length){tb.innerHTML='<tr><td colspan="9"><div class="epty"><div class="eico2">📭</div><p>Aucun élève enregistré.<br>Les élèves apparaissent ici après leur première connexion.</p></div></td></tr>';return;}
+  const sorted=entries.slice().sort((a,b)=>b.pct-a.pct);
+  const rk=['🥇','🥈','🥉'];
+  tb.innerHTML=sorted.map((e,i)=>{
+    const pnl=e.pnl,pct=e.pct;
+    return`<tr>
+      <td style="font-size:13px;font-family:var(--mono);font-weight:600">${i<3?rk[i]:i+1}</td>
+      <td><div class="cn">${e.name}</div></td>
+      <td class="cm">${fmt(e.initBudget)}</td>
+      <td class="cm">${fmt(e.budget||0)}</td>
+      <td class="cm">${fmt(e.portVal||0)}</td>
+      <td class="cm" style="font-weight:600">${fmt(e.total)}</td>
+      <td class="pc ${pnl>=0?'pos':'neg'}">${fmt(pnl)}</td>
+      <td class="pc ${pct>=0?'pos':'neg'}">${fmtP(pct)}</td>
+      <td><div class="act-btns">
+        <button class="bact bact-v" onclick="viewStudentDetail('${e.name}')">Détail</button>
+        <button class="bact bact-r" onclick="teacherResetStudent('${e.name}')">Réinit.</button>
+        <button class="bact bact-d" onclick="teacherDeleteStudent('${e.name}')">Suppr.</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderTeacherStats(){
+  const entries=getLB();const nb=entries.length;
+  document.getElementById('t-nb').textContent=nb;
+  if(!nb){['t-best','t-worst','t-avg'].forEach(id=>document.getElementById(id).textContent='—');return;}
+  const best=entries[0],worst=entries[nb-1];
+  const avg=entries.reduce((s,e)=>s+e.pct,0)/nb;
+  document.getElementById('t-best').textContent=(best.pct>=0?'+':'')+best.pct.toFixed(2)+'% ('+best.name.split(' ')[0]+')';
+  document.getElementById('t-worst').textContent=(worst.pct>=0?'+':'')+worst.pct.toFixed(2)+'% ('+worst.name.split(' ')[0]+')';
+  document.getElementById('t-avg').textContent=(avg>=0?'+':'')+avg.toFixed(2)+'%';
+}
+
+function viewStudentDetail(name){
+  const lb=JSON.parse(localStorage.getItem(LB_KEY)||'{}');
+  const e=lb[name];if(!e)return;
+  // Charger l'état complet de l'élève si disponible (même appareil = même localStorage)
+  // Pour afficher les positions on essaie de lire le portefeuille courant si c'est le même élève
+  const zone=document.getElementById('student-detail-zone');
+  const pct=e.pct,pnl=e.pnl;
+  const isCurrentStudent=(S.studentName===name&&S.initialized);
+  let holdingsHTML='<p style="font-size:12px;color:var(--text3);padding:1rem">Les positions détaillées ne sont visibles que si cet élève est l\'utilisateur actuel de cet appareil.</p>';
+  if(isCurrentStudent&&Object.keys(S.holdings).length>0){
+    holdingsHTML=`<table class="dt" style="font-size:11px">
+      <thead><tr><th>Action</th><th>Qté</th><th>PRU</th><th>Cours actuel</th><th>Valeur</th><th>+/- value</th></tr></thead>
+      <tbody>${Object.entries(S.holdings).map(([ticker,h])=>{
+        const s=CAC40.find(x=>x.t===ticker),p=S.prices[ticker];
+        const pru=h.totalCost/h.qty,cur=p?p.price:pru,val=cur*h.qty,hp=val-h.totalCost;
+        return`<tr><td>${s?s.l:''} ${s?s.n:ticker}</td><td class="cm">${h.qty}</td><td class="cm">${fmt(pru)}</td><td class="cm">${p?fmt(p.price):'—'}</td><td class="cm">${fmt(val)}</td><td class="pc ${hp>=0?'pos':'neg'}">${fmt(hp)}</td></tr>`;
+      }).join('')}</tbody>
+    </table>`;
+  }
+  zone.innerHTML=`<div class="student-detail">
+    <div class="sd-header">
+      <div class="sd-av">${ini(name)}</div>
+      <div><div class="sd-name">${name}</div><div class="sd-meta">Dernière activité : ${new Date(e.ts).toLocaleString('fr-FR')}</div></div>
+      <div style="margin-left:auto;display:flex;gap:6px">
+        <button class="btn-warn" onclick="teacherResetStudent('${name}')">Réinitialiser</button>
+        <button class="btn-info" onclick="teacherDeleteStudent('${name}')">Supprimer</button>
+        <button class="bsm2" onclick="document.getElementById('student-detail-zone').innerHTML=''">Fermer</button>
+      </div>
+    </div>
+    <div class="sd-metrics">
+      <div class="sd-met"><div class="sd-ml">Budget initial</div><div class="sd-mv">${fmt(e.initBudget)}</div></div>
+      <div class="sd-met"><div class="sd-ml">Budget disponible</div><div class="sd-mv">${fmt(e.budget||0)}</div></div>
+      <div class="sd-met"><div class="sd-ml">Valeur portefeuille</div><div class="sd-mv">${fmt(e.portVal||0)}</div></div>
+      <div class="sd-met"><div class="sd-ml">Valeur totale</div><div class="sd-mv" style="font-size:16px;font-weight:700">${fmt(e.total)}</div></div>
+      <div class="sd-met"><div class="sd-ml">Plus/moins-value</div><div class="sd-mv ${pnl>=0?'pos':'neg'}">${fmt(pnl)}</div></div>
+      <div class="sd-met"><div class="sd-ml">Performance</div><div class="sd-mv ${pct>=0?'pos':'neg'}">${fmtP(pct)}</div></div>
+    </div>
+    ${holdingsHTML}
+  </div>`;
+  zone.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function teacherResetStudent(name){
+  openConfirm('Réinitialiser '+name,'Le portefeuille sera remis à zéro (budget initial conservé). L\'élève devra se reconnecter.',()=>{
+    const lb=JSON.parse(localStorage.getItem(LB_KEY)||'{}');
+    if(lb[name]){lb[name]={...lb[name],budget:lb[name].initBudget,portVal:0,total:lb[name].initBudget,pnl:0,pct:0,ts:Date.now()};localStorage.setItem(LB_KEY,JSON.stringify(lb));}
+    // Si c'est l'élève courant, reset aussi le state
+    if(S.studentName===name){S.budget=S.initBudget;S.holdings={};S.history=[];sv();}
+    toast(name+' réinitialisé','warn');refreshTeacher();
+  });
+}
+
+function teacherDeleteStudent(name){
+  openConfirm('Supprimer '+name,'Le profil de cet élève sera définitivement supprimé du classement.',()=>{
+    const lb=JSON.parse(localStorage.getItem(LB_KEY)||'{}');
+    delete lb[name];localStorage.setItem(LB_KEY,JSON.stringify(lb));
+    if(S.studentName===name){localStorage.removeItem(SK);}
+    toast(name+' supprimé','err');refreshTeacher();
+    document.getElementById('student-detail-zone').innerHTML='';
+  });
+}
+
+function confirmDeleteAll(){
+  openConfirm('Supprimer TOUS les élèves','Tous les portefeuilles et le classement seront effacés. Action irréversible.',()=>{
+    localStorage.removeItem(LB_KEY);localStorage.removeItem(SK);toast('Tous les élèves supprimés','err');refreshTeacher();
+  });
+}
+
+// ============================================================
+// ENSEIGNANT — CLASSEMENT IMPRIMABLE
+// ============================================================
+function renderTeacherLB(){
+  const entries=getLB();const tb=document.getElementById('t-lb-body');
+  if(!entries.length){tb.innerHTML='<tr><td colspan="8"><div class="epty"><div class="eico2">🏆</div><p>Aucun élève.</p></div></td></tr>';return;}
+  const rk=['🥇','🥈','🥉'];
+  tb.innerHTML=entries.map((e,i)=>{const pnl=e.pnl,pct=e.pct;
+    return`<tr>
+      <td style="text-align:center;font-size:14px">${i<3?rk[i]:i+1}</td>
+      <td><div class="cn">${e.name}</div></td>
+      <td class="cm">${fmt(e.initBudget)}</td>
+      <td class="cm">${fmt(e.budget||0)}</td>
+      <td class="cm">${fmt(e.portVal||0)}</td>
+      <td class="cm" style="font-weight:700">${fmt(e.total)}</td>
+      <td class="pc ${pnl>=0?'pos':'neg'}">${fmt(pnl)}</td>
+      <td class="pc ${pct>=0?'pos':'neg'}" style="font-weight:700">${fmtP(pct)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function printClassement(){
+  renderTeacherLB();
+  const entries=getLB();
+  const rk=['🥇','🥈','🥉'];
+  const avg=entries.length?entries.reduce((s,e)=>s+e.pct,0)/entries.length:0;
+  const rows=entries.map((e,i)=>`
+    <tr>
+      <td class="medal">${i<3?rk[i]:i+1}</td>
+      <td>${e.name}</td>
+      <td>${fmt(e.initBudget)}</td>
+      <td>${fmt(e.budget||0)}</td>
+      <td>${fmt(e.portVal||0)}</td>
+      <td style="font-weight:700">${fmt(e.total)}</td>
+      <td class="${e.pnl>=0?'print-pos':'print-neg'}">${fmt(e.pnl)}</td>
+      <td class="${e.pct>=0?'print-pos':'print-neg'}" style="font-weight:700">${fmtP(e.pct)}</td>
+    </tr>`).join('');
+  document.getElementById('print-zone').innerHTML=`
+    <div class="print-page">
+      <div class="print-header">
+        <h1>🏆 Classement Boursier — Simulation CAC40</h1>
+        <p>Seconde MRC · Imprimé le ${now()} · Cours du : ${S.lastUpdate||'—'}</p>
+      </div>
+      <table class="print-table">
+        <thead><tr><th>Rang</th><th>Élève</th><th>Budget initial</th><th>Budget dispo.</th><th>Valeur portef.</th><th>Valeur totale</th><th>+/- value €</th><th>Performance %</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div class="print-footer">
+        Moyenne de la classe : ${(avg>=0?'+':'')+avg.toFixed(2)}% · ${entries.length} participant(s) · Simulateur Boursier CAC40 — Seconde MRC
+      </div>
+    </div>`;
+  document.getElementById('print-zone').style.display='block';
+  setTimeout(()=>{window.print();setTimeout(()=>{document.getElementById('print-zone').style.display='none';},500);},200);
+}
+
+// ============================================================
+// ENSEIGNANT — IMPORT CSV (pour toute la classe)
+// ============================================================
+const tdz=document.getElementById('t-dz');
+tdz.addEventListener('dragover',e=>{e.preventDefault();tdz.classList.add('dov');});
+tdz.addEventListener('dragleave',()=>tdz.classList.remove('dov'));
+tdz.addEventListener('drop',e=>{e.preventDefault();tdz.classList.remove('dov');if(e.dataTransfer.files[0])teacherProcCSV(e.dataTransfer.files[0]);});
+function teacherImportCSV(event){if(event.target.files[0])teacherProcCSV(event.target.files[0]);}
+
+function teacherProcCSV(file){
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const lines=e.target.result.split(/[\r\n]+/).filter(l=>l.trim());
+    let newPrices={...S.prices},upd=0,errs=[];
+    lines.forEach((line,i)=>{
+      if(i===0&&/ticker/i.test(line))return;
+      const pts=line.split(/[,;]/);if(pts.length<2)return;
+      const rawT=pts[0].trim().toUpperCase(),price=parseFloat(pts[1].trim().replace(',','.'));
+      if(!rawT||isNaN(price)||price<=0){errs.push(`L.${i+1}`);return;}
+      const ticker=rawT.endsWith('.PA')?rawT:rawT+'.PA';
+      const s=CAC40.find(x=>x.t===ticker);
+      if(s){const prev=newPrices[ticker]?.price||price;newPrices[ticker]={price,change:parseFloat(((price-prev)/prev*100).toFixed(2)),prev};upd++;}
+      else errs.push(rawT);
+    });
+    if(upd>0){
+      const ts=now();
+      S.prices=newPrices;S.lastUpdate=ts;
+      // Sauvegarder les cours partagés → accessibles par tous les élèves
+      setSharedPrices(newPrices,ts);
+      sv();
+      document.getElementById('t-lupd').textContent=ts;
+      renderTeacherStats();
+    }
+    const res=document.getElementById('t-ir');res.style.display='block';
+    if(upd>0){res.className='ir ok';res.textContent=`✓ ${upd} cours mis à jour pour toute la classe${errs.length?' — '+errs.slice(0,3).join(', '):''}`;toast(`${upd} cours importés — visibles par tous les élèves`,'ok');}
+    else{res.className='ir err';res.textContent='✗ Aucun cours importé. '+errs.slice(0,3).join(', ');}
+  };
+  reader.readAsText(file,'UTF-8');
+}
+
+// ============================================================
+// CSV COMMUNS
+// ============================================================
+function genTemplate(){
+  const rows=['Ticker,Prix (à remplir)'];
+  CAC40.forEach(s=>rows.push(`${s.t},`));
+  dlCSV(rows.join('\n'),'modele_cotations_cac40_vide.csv');
+  toast('Modèle téléchargé — renseignez les prix puis importez','info');
+}
+function genCurrentCSV(){
+  const rows=['Ticker,Nom,Prix,Variation(%)'];
+  CAC40.forEach(s=>{const p=S.prices[s.t];if(p)rows.push(`${s.t},${s.n},${p.price.toFixed(2)},${p.change.toFixed(2)}`);});
+  dlCSV(rows.join('\n'),`cours_cac40_${now().replace(/[: /]/g,'_')}.csv`);toast('Cours exportés','ok');
+}
+function dlCSV(content,filename){const blob=new Blob(['\ufeff'+content],{type:'text/csv;charset=utf-8;'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();}
+
+// ============================================================
+// MODALES — fermeture
+// ============================================================
+[document.getElementById('pin-modal'),document.getElementById('teacher-login-modal'),document.getElementById('confirm-modal')].forEach(m=>{m.addEventListener('click',function(e){if(e.target===this)this.style.display='none';});});
+
+// ============================================================
+// DÉMARRAGE
+// ============================================================
+if(ldState()&&S.initialized){
+  // Appliquer cours partagés si plus récents
+  launch();
+} else {
+  showHome();
+}
+</script>
+</body>
+</html>
